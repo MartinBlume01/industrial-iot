@@ -1,0 +1,15 @@
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: iot-webhook
+    receivers:
+      - uid: iot-webhook-receiver
+        type: webhook
+        disableResolveMessage: false
+        settings:
+          url: http://host.docker.internal:5001/alerts
+          httpMethod: POST
+          maxAlerts: 0
+
+deleteContactPoints: []
