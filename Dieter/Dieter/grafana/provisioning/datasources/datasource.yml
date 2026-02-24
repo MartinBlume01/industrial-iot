@@ -1,0 +1,21 @@
+apiVersion: 1
+
+datasources:
+  - name: TimescaleDB
+    uid: timescaledb
+    type: postgres
+    access: proxy
+    url: postgres:5432
+    user: iot_app
+    secureJsonData:
+      password: iot_app
+    jsonData:
+      database: iot
+      sslmode: disable
+      postgresVersion: 1500
+      timescaledb: true
+      maxOpenConns: 100
+      maxIdleConns: 100
+      connMaxLifetime: 14400
+    isDefault: true
+    editable: true

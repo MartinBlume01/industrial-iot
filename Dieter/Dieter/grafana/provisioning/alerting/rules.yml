@@ -1,0 +1,94 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: Factory Temperature Alerts
+    folder: Industrial IoT
+    interval: 1m
+    rules:
+      - uid: temp_out_of_range
+        title: Temperature Out Of Range
+        condition: C
+        data:
+          - refId: A
+            queryType: ''
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: timescaledb
+            model:
+              datasource:
+                type: postgres
+                uid: timescaledb
+              editorMode: code
+              format: table
+              intervalMs: 1000
+              maxDataPoints: 43200
+              rawQuery: true
+              rawSql: |
+                WITH latest AS (
+                  SELECT DISTINCT ON (device_eui)
+                    device_eui,
+                    received_at,
+                    temperature_c
+                  FROM temperature_measurements
+                  ORDER BY device_eui, received_at DESC
+                )
+                SELECT count(*)::double precision AS out_of_range_count
+                FROM latest
+                WHERE temperature_c IS NOT NULL
+                  AND (temperature_c < 5 OR temperature_c > 80);
+              refId: A
+          - refId: B
+            queryType: ''
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              reducer: last
+              refId: B
+              type: reduce
+          - refId: C
+            queryType: ''
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: B
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+              conditions:
+                - evaluator:
+                    params:
+                      - 1
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  reducer:
+                    type: last
+                  type: query
+        noDataState: OK
+        execErrState: Error
+        for: 2m
+        labels:
+          severity: warning
+          system: factory-temperature
+        annotations:
+          summary: Mindestens eine Messstelle liegt außerhalb des Temperaturbereichs
+          description: Prüfen Sie das Dashboard "Factory Temperature Overview" und die Tabelle "Aktive Temperaturabweichungen".
